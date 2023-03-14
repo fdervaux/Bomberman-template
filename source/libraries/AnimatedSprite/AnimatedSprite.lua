@@ -11,7 +11,7 @@ import 'CoreLibs/sprites'
 import 'libraries/noble/Noble'
 
 local gfx<const> = playdate.graphics
-local function emptyFunc()
+local function emptyFunc(empty)
 end
 
 class("AnimatedSprite").extends(NobleSprite)
@@ -228,6 +228,7 @@ end
 ---Copies states
 ---@return table states Deepcopy of the current states
 function AnimatedSprite:copyLocalStates()
+    ---@diagnostic disable-next-line: undefined-field
     return table.deepcopy(self.states)
 end
 

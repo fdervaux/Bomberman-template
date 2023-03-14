@@ -272,7 +272,7 @@ function Noble.Menu.new(__activate, __alignment, __localized, __color, __padding
 		-- In case the current item is selected.
 		if (self.currentItemNumber == itemPosition and self.currentItemNumber ~= 1) then
 			self:select(self.currentItemNumber - 1, true)
-			if (self.isActive() == false) then
+			if (self:isActive() == false) then
 				self:setSelectedRow(0)
 			end
 		end

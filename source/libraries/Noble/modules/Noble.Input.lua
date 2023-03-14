@@ -241,6 +241,7 @@ function Noble.Input.update()
 end
 
 -- Do not call this method directly, or modify it, thanks. :-)
+---@diagnostic disable-next-line: duplicate-set-field
 function playdate.crankDocked()
 	if (currentHandler ~= nil and currentHandler.crankDocked ~= nil and Noble.Input.getEnabled() == true) then
 		currentHandler.crankDocked()
@@ -248,6 +249,7 @@ function playdate.crankDocked()
 end
 
 -- Do not call this method directly, or modify it, thanks. :-)
+---@diagnostic disable-next-line: duplicate-set-field
 function playdate.crankUndocked()
 	if (currentHandler ~= nil and currentHandler.crankUndocked ~= nil and Noble.Input.getEnabled() == true) then
 		currentHandler.crankUndocked()

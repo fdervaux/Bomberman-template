@@ -328,6 +328,10 @@ function Sequence:get( time )
 	-- we calculate and cache the result
 	local clampedTime = self:getClampedTime(time)
 	local easing = self:getEasingByTime(clampedTime)
+	if not easing then
+		return nil
+	end
+
 	local result = easing.fn(clampedTime-easing.timestamp, easing.from, easing.to-easing.from, easing.duration, table.unpack(easing.params or {}))
 
 	-- cache
