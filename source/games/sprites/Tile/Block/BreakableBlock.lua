@@ -1,9 +1,5 @@
 class('BreakableBlock').extends(Block)
 
-function BreakableBlock.new(i,j)
-    return BreakableBlock(i, j)
-end
-
 function BreakableBlock:init(i, j)
     BreakableBlock.super.init(self, i, j)
 

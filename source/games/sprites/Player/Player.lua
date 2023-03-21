@@ -1,11 +1,11 @@
 class('Player').extends(AnimatedSprite)
 
-P0, P1 = 0, 1
+P1, P2 = 0, 1
 playerImagetable = playdate.graphics.imagetable.new('images/character-table-32-32.png')
 
 
 function Player:init(i, j, player)
-    Player.super.init(self, playerImagetable, nil, nil)
+    Player.super.init(self, playerImagetable)
 
     self:add()
 
@@ -13,20 +13,18 @@ function Player:init(i, j, player)
     self.bombs = {}
     self.nbBombMax = 1
     self.power = 1
-    self.maxSpeed = 2
+    self.maxSpeed = 5
     self.canKick = false
     self.isDead = false
 
     self.lastDirection = 'Down'
-    self.velocity = playdate.geometry.vector2D.new(0, 0)
-    self.shiftY = 0
-    self.shiftX = 0
-
-    self.shiftTolerance = 8
+    self.inputMovement = playdate.geometry.vector2D.new(0, 0)
 
     -- configure collision
 
-    self:setCollideRect(10, 18, 12, 12)
+    -- self:setCollideRect(0,0,32,32)
+    self:setCollideRect(8, 16, 16, 16)
+
     local playerCollisionGroup = playerNumber == P1 and collisionGroup.player1 or collisionGroup.player2
     self:setGroups({ playerCollisionGroup })
 
@@ -34,8 +32,6 @@ function Player:init(i, j, player)
         collisionGroup.block,
         collisionGroup.bomb,
         collisionGroup.item,
-        collisionGroup.p1,
-        collisionGroup.p2,
         collisionGroup.explosion
     })
 
@@ -43,14 +39,13 @@ function Player:init(i, j, player)
     local x, y = Noble.currentScene():getPositionAtCoordinates(i, j)
 
     self:moveTo(x, y - 8)
-
     self:playAnimation()
     self:setZIndex(10)
 
     -- add animation States
 
     local playerShiftSpriteSheet = player == P1 and 0 or 5
-    local animationSpeed = 10
+    local animationSpeed = 5
 
     self:addState("dead", 64 + playerShiftSpriteSheet, 67 + playerShiftSpriteSheet, {
         tickStep = animationSpeed,
@@ -95,61 +90,21 @@ function Player:init(i, j, player)
 
     self.states.dead.onAnimationEndEvent = function(self)
         self:remove()
-        --playdate.timer.performAfterDelay(500, function()
-        --    world:endGame(self ~= player1)
-        --end)
     end
 end
 
-function Player:Move(playerDirection)
-    local velocity = playerDirection
-    velocity:normalize()
-    self.velocity = velocity
+function Player:Move(x, y)
+    local inputMovement = playdate.geometry.vector2D.new(x, y)
+    inputMovement:normalize()
+    self.inputMovement = inputMovement
 end
 
 function Player:collisionResponse(other)
-    self.shiftY = 0
-    self.shiftX = 0
-
-    if (hasGroup(other:getGroupMask(), collisionGroup.block)) then
-        local scene = Noble.currentScene()
-
-        local i,j = scene:getcoordinates(self.x,self.y)
-
-        print (i .. ", " .. j)
-
-        if  ( i == 2 and self.lastDirection == "Left" ) or
-            ( i == scene.gameTileWidth - 1 and  self.lastDirection == "Right" ) or
-            ( j == 2 and self.lastDirection == "Up") or
-            ( j == scene.gameTileHeight - 1 and  self.lastDirection == "Down" )
-            then
-            return 'slide'
-        end
-
-        if self.velocity.x > 0 or self.velocity.x < 0 then
-            if self.y + 8 > other.y then
-                self.shiftY = other.y - self.y - 8 + 14
-            else
-                self.shiftY = other.y - self.y - 8 - 14
-            end
-        end
-
-        if self.velocity.y > 0 or self.velocity.y < 0 then
-            if self.x > other.x then
-                self.shiftX = other.x - self.x + 14
-            else
-                self.shiftX = other.x - self.x - 14
-            end
-        end
-    end
-    
-
     return 'slide'
 end
 
 function Player:update()
     Player.super.update(self)
-
 
     -- dead update
     if self.isDead then
@@ -157,48 +112,97 @@ function Player:update()
         return
     end
 
-
-    -- compute velocity
-
-    local oldX, oldY, _, _ = self:getPosition()
-    local x, y, collisions, _ = self:moveWithCollisions(self.x + self.velocity.x * self.maxSpeed,
-        self.y + self.velocity.y * self.maxSpeed)
-    self.velocity = playdate.geometry.vector2D.new(x - oldX, y - oldY)
-
-
-    -- change state with velocity
-
-    if self.velocity.y < 0 then
+    -- change state with inputMovement
+    if self.inputMovement.y < 0 then
         self:changeState('RunUp', true)
         self.lastDirection = "Up"
-    elseif self.velocity.x > 0 then
+    elseif self.inputMovement.x > 0 then
         self:changeState('RunRight', true)
         self.lastDirection = "Right"
-    elseif self.velocity.y > 0 then
+    elseif self.inputMovement.y > 0 then
         self:changeState('RunDown', true)
         self.lastDirection = "Down"
-    elseif self.velocity.x < 0 then
+    elseif self.inputMovement.x < 0 then
         self:changeState('RunLeft', true)
         self.lastDirection = "Left"
     else
         self:changeState('Idle' .. self.lastDirection, true)
     end
 
+    if (self.inputMovement.x ~= 0 and self.inputMovement.y == 0)
+        or (self.inputMovement.y ~= 0 and self.inputMovement.x == 0) then
+        local rect = getRect(
+            self.x,
+            self.y + 8,
+            self.x + self.inputMovement.x * 16,
+            self.y + 8 + self.inputMovement.y * 16
+        )
 
-    if self.shiftY < self.shiftTolerance and self.shiftY > -self.shiftTolerance then
-        self.y = self.y + self.shiftY
+        rect.x = rect.x - 1
+        rect.y = rect.y - 1
+        rect.w = rect.w + 2
+        rect.h = rect.h + 2
+
+        local collisions = playdate.graphics.sprite.querySpritesInRect(rect)
+
+        local isObstacleFront = false
+        if collisions then
+            for i = 1, #collisions, 1 do
+                if collisions[i]:isa(Block) then
+                    isObstacleFront = true
+                    break
+                end
+            end
+        end
+
+        if not isObstacleFront then
+            if self.lastDirection == "Left" or self.lastDirection == "Right" then
+                local i, j = Noble.currentScene():getcoordinates(self.x, self.y + 8)
+                local _, y = Noble.currentScene():getPositionAtCoordinates(i, j)
+                self:moveTo(self.x, y - 8)
+            end
+            if self.lastDirection == "Up" or self.lastDirection == "Down" then
+                local i, j = Noble.currentScene():getcoordinates(self.x, self.y + 8)
+                local x, _ = Noble.currentScene():getPositionAtCoordinates(i, j)
+                self:moveTo(x, self.y)
+            end
+        end
     end
-    if self.shiftX < self.shiftTolerance and self.shiftX > -self.shiftTolerance then
-        self.x = self.x + self.shiftX
+
+    -- move player With Collision
+    local x, y, _, _ = self:moveWithCollisions(
+        self.x + self.inputMovement.x * self.maxSpeed,
+        self.y + self.inputMovement.y * self.maxSpeed
+    )
+
+    -- reset inmputMovement
+
+    self.inputMovement.x = 0
+    self.inputMovement.y = 0
+
+
+    if #self.bombs > 0 and self.bombs[1].isExploded then
+        table.remove(self.bombs, 1)
+    end
+end
+
+function Player:dropBomb()
+    local sprites = playdate.graphics.sprite.querySpritesAtPoint(self.x, self.y + 8)
+
+    if sprites ~= nil then
+        for i = 1, #sprites, 1 do
+            if sprites[i]:isa(Bomb) then
+                return
+            end
+        end
     end
 
-    -- reset velocity
+    if #self.bombs >= self.nbBombMax then
+        return
+    end
 
-    self.velocity.x = 0
-    self.velocity.y = 0
+    local i, j = Noble.currentScene():getcoordinates(self.x, self.y + 8)
 
-    -- reset shift
-
-    self.shiftY = 0
-    self.shiftX = 0
+    self.bombs[#self.bombs + 1] = Bomb(i, j, self.power)
+    
 end

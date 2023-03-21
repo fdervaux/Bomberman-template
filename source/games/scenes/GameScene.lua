@@ -7,11 +7,10 @@ collisionGroup = {
     bomb = 3,
     item = 4,
     block = 5,
-    ignoreP1 = 6,
-    ignoreP2 = 7,
-    explosion = 8
+    explosion = 6,
+    ignoreP1 = 7,
+    ignoreP2 = 8,
 }
-
 
 function GameScene:init()
     GameScene.super.init(self)
@@ -24,22 +23,26 @@ function GameScene:init()
 
     GameScene.inputHandler = {
         upButtonHold = function()
-            self.player1:Move(playdate.geometry.vector2D.new(self.player1.velocity.x, -1))
+            self.player1:Move(self.player1.inputMovement.x, -1)
         end,
         downButtonHold = function()
-            self.player1:Move(playdate.geometry.vector2D.new(self.player1.velocity.x, 1))
+            self.player1:Move(self.player1.inputMovement.x, 1)
         end,
         leftButtonHold = function()
-            self.player1:Move(playdate.geometry.vector2D.new(-1, self.player1.velocity.y))
+            self.player1:Move(-1, self.player1.inputMovement.y)
         end,
         rightButtonHold = function()
-            self.player1:Move(playdate.geometry.vector2D.new(1, self.player1.velocity.y))
+            self.player1:Move(1, self.player1.inputMovement.y)
         end,
+        AButtonDown = function()
+            self.player1:dropBomb()
+        end
     }
 end
 
 function GameScene:enter()
     GameScene.super.enter(self)
+
     playdate.graphics.setBackgroundColor(playdate.graphics.kColorBlack)
 
     -- !!! important: set randomseed
@@ -100,7 +103,7 @@ function GameScene:enter()
         end
     end
 
-    local nbBloc = math.floor(#emptySpace * 0.6)
+    local nbBloc = math.floor(#emptySpace * 0.2)
 
     while nbBloc ~= 0 do
         local elementsIndex = math.random(#emptySpace)
@@ -110,10 +113,9 @@ function GameScene:enter()
         nbBloc = nbBloc - 1
     end
 
-
     -- add Floor
-    for i = 2, self.gameTileWidth, 1 do
-        for j = 2, self.gameTileHeight, 1 do
+    for i = 2, self.gameTileWidth - 1, 1 do
+        for j = 2, self.gameTileHeight - 1, 1 do
             self:addElement(Floor, i, j)
             self:updateFloor(i, j)
         end

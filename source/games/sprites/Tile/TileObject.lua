@@ -14,9 +14,6 @@ function TileObject:init(i, j, zIndex, hasCollider)
     self:add()
 
     self.i, self.j = i, j
-
-    print(Noble.currentScene().className)
-
     local x, y = Noble.currentScene():getPositionAtCoordinates(i, j)
 
     self:moveTo(x, y)
