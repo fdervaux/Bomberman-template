@@ -9,11 +9,13 @@ function Player:init(i, j, player)
 
     self:add()
 
+    self.playerNumber = player
+
     -- player variables
     self.bombs = {}
     self.nbBombMax = 1
     self.power = 1
-    self.maxSpeed = 5
+    self.maxSpeed = 1
     self.canKick = false
     self.isDead = false
 
@@ -25,7 +27,7 @@ function Player:init(i, j, player)
     -- self:setCollideRect(0,0,32,32)
     self:setCollideRect(8, 16, 16, 16)
 
-    local playerCollisionGroup = playerNumber == P1 and collisionGroup.player1 or collisionGroup.player2
+    local playerCollisionGroup = self.playerNumber == P1 and collisionGroup.p1 or collisionGroup.p2
     self:setGroups({ playerCollisionGroup })
 
     self:setCollidesWithGroups({
@@ -99,9 +101,6 @@ function Player:Move(x, y)
     self.inputMovement = inputMovement
 end
 
-function Player:collisionResponse(other)
-    return 'slide'
-end
 
 function Player:update()
     Player.super.update(self)
@@ -184,6 +183,18 @@ function Player:update()
     if #self.bombs > 0 and self.bombs[1].isExploded then
         table.remove(self.bombs, 1)
     end
+end
+
+function Player:collisionResponse(other)
+    if self.playerNumber == P1 and maskContainsGroup(other:getGroupMask(), collisionGroup.ignoreP1) then
+        return playdate.graphics.sprite.kCollisionTypeOverlap
+    end
+
+    if self.playerNumber == P2 and maskContainsGroup(other:getGroupMask(), collisionGroup.ignoreP2) then
+        return playdate.graphics.sprite.kCollisionTypeOverlap
+    end
+
+    return playdate.graphics.sprite.kCollisionTypeSlide
 end
 
 function Player:dropBomb()

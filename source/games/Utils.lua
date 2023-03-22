@@ -24,7 +24,7 @@ function hasbit(x, p)
     return x % (p + p) >= p
 end
 
-function hasGroup(mask, group)
+function maskContainsGroup(mask, group)
     return hasbit(mask, bit(group))
 end
 

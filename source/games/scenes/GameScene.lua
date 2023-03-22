@@ -49,6 +49,7 @@ function GameScene:enter()
     math.randomseed(playdate.getSecondsSinceEpoch())
 
     self.player1 = Player(2, 2, P1)
+    self.player2 = Player(2, 3, P2)
 
     -- world creation
 
