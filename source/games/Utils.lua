@@ -35,3 +35,7 @@ function getRect(x1, y1, x2, y2)
     local h = math.abs(y1 - y2)
     return playdate.geometry.rect.new(x, y, w, h)
 end
+
+function string.starts(String,Start)
+    return string.sub(String,1,string.len(Start))==Start
+ end

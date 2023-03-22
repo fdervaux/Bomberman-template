@@ -1,13 +1,17 @@
-class('Player').extends(AnimatedSprite)
+class('Player').extends(NobleSprite)
 
 P1, P2 = 0, 1
 playerImagetable = playdate.graphics.imagetable.new('images/character-table-32-32.png')
 
 
 function Player:init(i, j, player)
-    Player.super.init(self, playerImagetable)
+    Player.super.init(self)
 
     self:add()
+    self:setSize(16, 16)
+
+    self.animatedSprite = AnimatedSprite(playerImagetable)
+    self.animatedSprite:add()
 
     self.playerNumber = player
 
@@ -15,17 +19,17 @@ function Player:init(i, j, player)
     self.bombs = {}
     self.nbBombMax = 1
     self.power = 1
-    self.maxSpeed = 1
+    self.maxSpeed = 5
     self.canKick = false
     self.isDead = false
 
-    self.lastDirection = 'Down'
+    self.Direction = 'Down'
     self.inputMovement = playdate.geometry.vector2D.new(0, 0)
 
     -- configure collision
 
     -- self:setCollideRect(0,0,32,32)
-    self:setCollideRect(8, 16, 16, 16)
+    self:setCollideRect(0, 0, 16, 16)
 
     local playerCollisionGroup = self.playerNumber == P1 and collisionGroup.p1 or collisionGroup.p2
     self:setGroups({ playerCollisionGroup })
@@ -40,59 +44,64 @@ function Player:init(i, j, player)
     -- place character
     local x, y = Noble.currentScene():getPositionAtCoordinates(i, j)
 
-    self:moveTo(x, y - 8)
-    self:playAnimation()
-    self:setZIndex(10)
+    self:moveTo(x, y)
+    self.animatedSprite:playAnimation()
+    self.animatedSprite:setZIndex(10)
+    self.animatedSprite:moveTo(self.x, self.y - 8)
+
 
     -- add animation States
 
     local playerShiftSpriteSheet = player == P1 and 0 or 5
     local animationSpeed = 5
 
-    self:addState("dead", 64 + playerShiftSpriteSheet, 67 + playerShiftSpriteSheet, {
+    self.animatedSprite:addState("dead", 64 + playerShiftSpriteSheet, 67 + playerShiftSpriteSheet, {
         tickStep = animationSpeed,
         loop = false
     })
 
-    self:addState('IdleUp', 1 + playerShiftSpriteSheet, 1 + playerShiftSpriteSheet, {
+    self.animatedSprite:addState('IdleUp', 1 + playerShiftSpriteSheet, 1 + playerShiftSpriteSheet, {
         tickStep = animationSpeed
     })
-    self:addState('RunUp', 1, 3, {
+    self.animatedSprite:addState('RunUp', 1, 3, {
         tickStep = animationSpeed,
         yoyo = true,
         frames = { 2 + playerShiftSpriteSheet, 1 + playerShiftSpriteSheet, 3 + playerShiftSpriteSheet }
     })
 
-    self:addState('IdleRight', 10 + playerShiftSpriteSheet, 10 + playerShiftSpriteSheet, {
+    self.animatedSprite:addState('IdleRight', 10 + playerShiftSpriteSheet, 10 + playerShiftSpriteSheet, {
         tickStep = animationSpeed
     })
-    self:addState('RunRight', 1, 3, {
+    self.animatedSprite:addState('RunRight', 1, 3, {
         tickStep = animationSpeed,
         yoyo = true,
         frames = { 11 + playerShiftSpriteSheet, 10 + playerShiftSpriteSheet, 12 + playerShiftSpriteSheet }
     })
 
-    self:addState('IdleDown', 19 + playerShiftSpriteSheet, 19 + playerShiftSpriteSheet, {
+    self.animatedSprite:addState('IdleDown', 19 + playerShiftSpriteSheet, 19 + playerShiftSpriteSheet, {
         tickStep = animationSpeed
     }).asDefault()
-    self:addState('RunDown', 1, 3, {
+    self.animatedSprite:addState('RunDown', 1, 3, {
         tickStep = animationSpeed,
         yoyo = true,
         frames = { 20 + playerShiftSpriteSheet, 19 + playerShiftSpriteSheet, 21 + playerShiftSpriteSheet }
     })
 
-    self:addState('IdleLeft', 28 + playerShiftSpriteSheet, 28 + playerShiftSpriteSheet, {
+    self.animatedSprite:addState('IdleLeft', 28 + playerShiftSpriteSheet, 28 + playerShiftSpriteSheet, {
         tickStep = animationSpeed
     })
-    self:addState('RunLeft', 1, 3, {
+    self.animatedSprite:addState('RunLeft', 1, 3, {
         tickStep = animationSpeed,
         yoyo = true,
         frames = { 29 + playerShiftSpriteSheet, 28 + playerShiftSpriteSheet, 30 + playerShiftSpriteSheet }
     })
 
-    self.states.dead.onAnimationEndEvent = function(self)
+    self.animatedSprite.states.dead.onAnimationEndEvent = function(self)
         self:remove()
     end
+
+    self.animationSequence = Sequence.new():from(1)
+
 end
 
 function Player:Move(x, y)
@@ -100,7 +109,6 @@ function Player:Move(x, y)
     inputMovement:normalize()
     self.inputMovement = inputMovement
 end
-
 
 function Player:update()
     Player.super.update(self)
@@ -112,29 +120,30 @@ function Player:update()
     end
 
     -- change state with inputMovement
+    local lastDirection = self.Direction
     if self.inputMovement.y < 0 then
-        self:changeState('RunUp', true)
-        self.lastDirection = "Up"
+        self.animatedSprite:changeState('RunUp', true)
+        self.Direction = "Up"
     elseif self.inputMovement.x > 0 then
-        self:changeState('RunRight', true)
-        self.lastDirection = "Right"
+        self.animatedSprite:changeState('RunRight', true)
+        self.Direction = "Right"
     elseif self.inputMovement.y > 0 then
-        self:changeState('RunDown', true)
-        self.lastDirection = "Down"
+        self.animatedSprite:changeState('RunDown', true)
+        self.Direction = "Down"
     elseif self.inputMovement.x < 0 then
-        self:changeState('RunLeft', true)
-        self.lastDirection = "Left"
+        self.animatedSprite:changeState('RunLeft', true)
+        self.Direction = "Left"
     else
-        self:changeState('Idle' .. self.lastDirection, true)
+        self.animatedSprite:changeState('Idle' .. self.Direction, true)
     end
 
     if (self.inputMovement.x ~= 0 and self.inputMovement.y == 0)
         or (self.inputMovement.y ~= 0 and self.inputMovement.x == 0) then
         local rect = getRect(
             self.x,
-            self.y + 8,
+            self.y,
             self.x + self.inputMovement.x * 16,
-            self.y + 8 + self.inputMovement.y * 16
+            self.y + self.inputMovement.y * 16
         )
 
         rect.x = rect.x - 1
@@ -154,16 +163,24 @@ function Player:update()
             end
         end
 
-        if not isObstacleFront then
-            if self.lastDirection == "Left" or self.lastDirection == "Right" then
-                local i, j = Noble.currentScene():getcoordinates(self.x, self.y + 8)
+        if not isObstacleFront and lastDirection ~= self.Direction then
+            if self.Direction == "Left" or self.Direction == "Right" then
+                local i, j = Noble.currentScene():getcoordinates(self.x, self.y)
                 local _, y = Noble.currentScene():getPositionAtCoordinates(i, j)
-                self:moveTo(self.x, y - 8)
+                if y ~= self.y then
+                    self.animationSequence = Sequence.new():from(0):to(1, 0.2, Ease.outCubic)
+                    self.animationSequence:start()
+                    self:moveTo(self.x, y)
+                end
             end
-            if self.lastDirection == "Up" or self.lastDirection == "Down" then
-                local i, j = Noble.currentScene():getcoordinates(self.x, self.y + 8)
+            if self.Direction == "Up" or self.Direction == "Down" then
+                local i, j = Noble.currentScene():getcoordinates(self.x, self.y)
                 local x, _ = Noble.currentScene():getPositionAtCoordinates(i, j)
-                self:moveTo(x, self.y)
+                if x ~= self.x then
+                    self.animationSequence = Sequence.new():from(0):to(1, 0.2, Ease.outCubic)
+                    self.animationSequence:start()
+                    self:moveTo(x, self.y)
+                end
             end
         end
     end
@@ -174,6 +191,13 @@ function Player:update()
         self.y + self.inputMovement.y * self.maxSpeed
     )
 
+
+    local spriteX = playdate.math.lerp(self.animatedSprite.x, self.x, self.animationSequence:get())
+    local spriteY = playdate.math.lerp(self.animatedSprite.y, self.y - 8, self.animationSequence:get())
+
+    self.animatedSprite:moveTo(spriteX, spriteY)
+
+    -- self.animatedSprite:moveTo(self.x, self.y - 8)
     -- reset inmputMovement
 
     self.inputMovement.x = 0
@@ -198,22 +222,20 @@ function Player:collisionResponse(other)
 end
 
 function Player:dropBomb()
-    local sprites = playdate.graphics.sprite.querySpritesAtPoint(self.x, self.y + 8)
+    local sprites = self:overlappingSprites()
 
-    if sprites ~= nil then
-        for i = 1, #sprites, 1 do
-            if sprites[i]:isa(Bomb) then
-                return
-            end
+    for i = 1, #sprites, 1 do
+        if sprites[i]:isa(Bomb) then
+            return
         end
     end
+
 
     if #self.bombs >= self.nbBombMax then
         return
     end
 
-    local i, j = Noble.currentScene():getcoordinates(self.x, self.y + 8)
+    local i, j = Noble.currentScene():getcoordinates(self.x, self.y)
 
     self.bombs[#self.bombs + 1] = Bomb(i, j, self.power)
-    
 end
