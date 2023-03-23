@@ -120,7 +120,8 @@ function Player:update()
     end
 
     -- change state with inputMovement
-    local lastDirection = self.Direction
+    local lastState = self.animatedSprite.currentState
+
     if self.inputMovement.y < 0 then
         self.animatedSprite:changeState('RunUp', true)
         self.Direction = "Up"
@@ -163,7 +164,7 @@ function Player:update()
             end
         end
 
-        if not isObstacleFront and lastDirection ~= self.Direction then
+        if not isObstacleFront and lastState ~= self.animatedSprite.currentState then
             if self.Direction == "Left" or self.Direction == "Right" then
                 local i, j = Noble.currentScene():getcoordinates(self.x, self.y)
                 local _, y = Noble.currentScene():getPositionAtCoordinates(i, j)
@@ -177,7 +178,7 @@ function Player:update()
                 local i, j = Noble.currentScene():getcoordinates(self.x, self.y)
                 local x, _ = Noble.currentScene():getPositionAtCoordinates(i, j)
                 if x ~= self.x then
-                    self.animationSequence = Sequence.new():from(0):to(1, 0.2, Ease.outCubic)
+                    self.animationSequence = Sequence.new():from(0):to(1, 0.3, Ease.outCubic)
                     self.animationSequence:start()
                     self:moveTo(x, self.y)
                 end
