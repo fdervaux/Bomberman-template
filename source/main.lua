@@ -14,6 +14,7 @@ import "games/sprites/Tile/Block/UnbreakableBlock.lua"
 import "games/sprites/Tile/Floor.lua"
 import "games/scenes/simpleScene.lua"
 import "games/scenes/GameScene.lua"
+import "games/Astar/Astar.lua"
 import "games/Utils.lua"
 
 Noble.new(SimpleScene)
